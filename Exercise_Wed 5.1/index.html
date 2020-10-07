@@ -3,12 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <title>Horizontal Stacked Bar Chart</title>
-    <script src="../libs/d3/d3.min.js"></script>
+<!--    <script src="../libs/d3/d3.min.js"></script> -->
+    <script src="https://d3js.org/d3.v6.js"></script>
 
 </head>
 <body>
-<div style="width: 80%"></div>
+<ol>
+    <li>Use d3.line() generator to calculate attribute "d" for "path" element</li>
+    <li>Make use of scaleLinear and scaleTime function</li>
+    <li>Give a different color for each line</li>
+</ol>
+<p>Use transition and styling to make the chart look nicer.</p>
+<p>SVG viewBox(0 0 1000 800)</p>
+
+<div style="width: 80%">
+    <svg id="main" width="100%" height="100%" viewBox="0 0 1000 800">
+</div>
+<!--<script src="D3Ex1.js">-->
 <script>
+    // add svg element to body
+    //apply viewBox
+    let svg = d3.select('svg#main');
+    svg.style('background-color','white')
+//        .attr('viewBox',"0 0 1000 800")
+    let margins = {x:80, y:50};
+    let dataSample = "data_sample.csv"
+    d3.csv(dataSample, d3.autoType)
+        .then(function(data){
+
+            //get data and SVG element extent
+            //SVG element
+            let rng = svg.attr('viewBox').split(' ')
+            rng = d3.map(rng, function (d){return parseInt(d)})
+            let xRng = [rng[0] + margins.x, rng[2] - margins.x];
+            let yRng = [rng[3] - margins.y, rng[1] + margins.y];
+        
+            // data extent (domain)
+            let datesMinMax = d3.extent(data,function(d){return d.date;})
+            let maxCost = d3.extent(data, function (d){return d.EstimatedCost})
+            let maxMats = d3.extent(data, function (d){return d.RawMaterial})
+            let maxWork = d3.extent(data, function (d){return d.Workmanship})
+            let maxStorage = d3.extent(data, function (d){return d.YearlyStorage})
+            let maxVals = [maxCost, maxMats, maxWork, maxStorage]
+            let maxYRangeL = d3.extent(maxVals, function (d){return d[0]})
+            let maxYRangeL2 = d3.min(maxYRangeL, function (d){return d})
+            let maxYRangeH = d3.extent(maxVals, function (d){return d[1]})
+            let maxYRangeH2 = d3.max(maxYRangeH, function (d){return d})
+            let maxYRange = [maxYRangeL2, maxYRangeH2];
+        
+            //Make the X and Y scale
+            let scaleDates = d3.scaleTime().domain(datesMinMax).range(xRng)
+            let scaleYCost = d3.scaleLinear().domain(maxYRange).range(yRng)
+            
+            //Make the line generator
+            let line_cost = d3.line()
+                .x(function (d){return scaleDates(d.date)})
+                .y(function (d){return scaleYCost(d.EstimatedCost)})
+            let line_mats = d3.line()
+                .x(function (d){return scaleDates(d.date)})
+                .y(function (d){return scaleYCost(d.RawMaterial)})
+            let line_work = d3.line()
+                .x(function (d){return scaleDates(d.date)})
+                .y(function (d){return scaleYCost(d.Workmanship)})
+            let line_storage = d3.line()
+                .x(function (d){return scaleDates(d.date)})
+                .y(function (d){return scaleYCost(d.YearlyStorage)})
+
+            //add path element to the SVG
+            let fig = svg.append('g');
+        
+            //there is one path for each case so data is only added as one array
+            fig = fig.data([data]);
+            fig.append('path').attr("d", function (d){return line_cost(d)})
+                                .attr("class","cases")
+                                .style("fill","none")
+                                .style("stroke","black")
+                                .style("stroke-width","2px")
+            fig.append('path').attr("d", function (d){return line_mats(d)})
+                                .attr("class","cases")
+                                .style("fill","none")
+                                .style("stroke","red")
+                                .style("stroke-width","2px")
+            fig.append('path').attr("d", function (d){return line_work(d)})
+                                .attr("class","cases")
+                                .style("fill","none")
+                                .style("stroke","green")
+                                .style("stroke-width","2px")
+            fig.append('path').attr("d", function (d){return line_storage(d)})
+                                .attr("class","cases")
+                                .style("fill","none")
+                                .style("stroke","blue")
+                                .style("stroke-width","2px")
+
+
+            //Add the axis
+            //the paths are very close to the margins, so let us add some margin first
+            //let use add the axis to each line in a separate group so we can move them
+            //to the margins using transform attr
+            //adding x axis
+            let xAxis = svg.append('g')
+                            .attr("transform","translate("+(0)+","+(yRng[0])+")")
+                            .attr('class','axis')
+                            .call(d3.axisBottom(scaleDates)); //call the scale function to automatically add the axis
+            let yAxis = svg.append('g')
+                            .attr('class','axis')
+                            .attr("transform","translate("+(margins.x)+","+(0)+")")
+                            .call(d3.axisLeft(scaleYCost)); //call the scale function to automatically add the axis
+
+        })
+
 
 </script>
 </body>
